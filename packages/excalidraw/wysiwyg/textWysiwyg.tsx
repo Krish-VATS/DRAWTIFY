@@ -495,8 +495,8 @@ export const textWysiwyg = ({
       layout.textAlign === "center"
         ? (layout.width - lineWidth) / 2
         : layout.textAlign === "right"
-        ? layout.width - lineWidth
-        : 0;
+          ? layout.width - lineWidth
+          : 0;
     const relativeX = localX - lineStartX;
 
     if (!line.text) {
@@ -622,6 +622,27 @@ export const textWysiwyg = ({
         editable.selectionStart = selectionStart;
         editable.selectionEnd = selectionStart;
       }
+      // --- 🪄 MAGIC MATH AUTO-SOLVER ---
+      const box = editable; // Change 'editable' to 'textarea' if that's what the line above uses
+      const currentText = box.value;
+
+      if (currentText.endsWith('=')) {
+        // Find math expression before the equals sign
+        const match = currentText.match(/([0-9+\-*/().\s]+)=$/);
+        if (match && match[1].trim() !== '') {
+          try {
+            // Calculate the answer
+            const result = new Function(`return ${match[1]}`)();
+            // If valid, inject the answer!
+            if (result !== undefined && !isNaN(result)) {
+              box.value = currentText + result;
+            }
+          } catch (e) {
+            // Ignore incomplete math
+          }
+        }
+      }
+      // ---------------------------------
       onChange(editable.value);
     };
   }
@@ -763,9 +784,9 @@ export const textWysiwyg = ({
           startIndices.concat(
             idx
               ? // curr line index is prev line's start + prev line's length + \n
-                startIndices[idx - 1] + lines[idx - 1].length + 1
+              startIndices[idx - 1] + lines[idx - 1].length + 1
               : // first selected line
-                selectionStart,
+              selectionStart,
           ),
         [] as number[],
       )
