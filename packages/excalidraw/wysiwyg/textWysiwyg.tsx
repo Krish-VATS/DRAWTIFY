@@ -638,11 +638,14 @@ export const textWysiwyg = ({
         if (match && match[1].trim() !== '') {
           try {
             // 3. Translate human math to Computer math
+            // 3. Translate human math to Computer math
             let equation = match[1]
               .toLowerCase()
-              .replace(/sin\(/g, 'Math.sin(')
-              .replace(/cos\(/g, 'Math.cos(')
-              .replace(/tan\(/g, 'Math.tan(')
+              // 🌟 NEW: Capture the number inside () and convert Degrees to Radians!
+              .replace(/sin\(([^)]+)\)/g, 'Math.sin(($1) * Math.PI / 180)')
+              .replace(/cos\(([^)]+)\)/g, 'Math.cos(($1) * Math.PI / 180)')
+              .replace(/tan\(([^)]+)\)/g, 'Math.tan(($1) * Math.PI / 180)')
+              // Standard math functions
               .replace(/sqrt\(/g, 'Math.sqrt(')
               .replace(/log\(/g, 'Math.log(')
               .replace(/pi/g, 'Math.PI')
