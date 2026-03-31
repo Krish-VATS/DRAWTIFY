@@ -622,27 +622,53 @@ export const textWysiwyg = ({
         editable.selectionStart = selectionStart;
         editable.selectionEnd = selectionStart;
       }
-      // --- 🪄 MAGIC MATH AUTO-SOLVER ---
-      const box = editable; // Change 'editable' to 'textarea' if that's what the line above uses
+
+      // --- 🪄 MAGIC MATH AUTO-SOLVER (V2) ---
+      const box = editable as any; // Fixed TypeScript strictness
       const currentText = box.value;
 
-      if (currentText.endsWith('=')) {
-        // Find math expression before the equals sign
-        const match = currentText.match(/([0-9+\-*/().\s]+)=$/);
+      // 1. Fix the Backspace Bug: Only solve if we are ADDING text, not deleting
+      const isDeleting = box._lastLength && currentText.length < box._lastLength;
+      box._lastLength = currentText.length;
+
+      if (!isDeleting && currentText.endsWith('=')) { // Fixed capital 'W' typo
+        // 2. Expand filter to allow letters, commas, and power symbols (^)
+        const match = currentText.match(/([a-zA-Z0-9+\-*/().\s^,]+)=$/);
+
         if (match && match[1].trim() !== '') {
           try {
+            // 3. Translate human math to Computer math
+            let equation = match[1]
+              .toLowerCase()
+              .replace(/sin\(/g, 'Math.sin(')
+              .replace(/cos\(/g, 'Math.cos(')
+              .replace(/tan\(/g, 'Math.tan(')
+              .replace(/sqrt\(/g, 'Math.sqrt(')
+              .replace(/log\(/g, 'Math.log(')
+              .replace(/pi/g, 'Math.PI')
+              .replace(/\^/g, '**'); // Turns 2^3 into 2**3 for JS
+
             // Calculate the answer
-            const result = new Function(`return ${match[1]}`)();
+            let result = new Function(`return ${equation}`)();
+
+            // Round to 4 decimal places to fix weird computer math
+            if (typeof result === 'number') {
+              result = Math.round(result * 10000) / 10000;
+            }
+
             // If valid, inject the answer!
             if (result !== undefined && !isNaN(result)) {
               box.value = currentText + result;
+              // Update length memory so we don't accidentally trigger the deleting bug
+              box._lastLength = box.value.length;
             }
           } catch (e) {
-            // Ignore incomplete math
+            // Ignore incomplete or broken math silently
           }
         }
       }
-      // ---------------------------------
+      // --------------------------------------
+
       onChange(editable.value);
     };
   }
