@@ -633,7 +633,7 @@ export const textWysiwyg = ({
 
       if (!isDeleting && currentText.endsWith('=')) { // Fixed capital 'W' typo
         // 2. Expand filter to allow letters, commas, and power symbols (^)
-        const match = currentText.match(/([a-zA-Z0-9+\-*/().\s^,]+)=$/);
+        const match = currentText.match(/([a-zA-Z0-9+\-*/(). \t^,]+)=$/);
 
         if (match && match[1].trim() !== '') {
           try {
